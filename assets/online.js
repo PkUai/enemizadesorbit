@@ -43,3 +43,23 @@ gate('Carregando acesso…');startOnline();
 db.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){live.member=false;gate();}});
 setInterval(()=>{if(live.member&&!document.hidden)refreshSessions().then(()=>{if(route==='sessions')render();}).catch(()=>{});},30000);
 window.addEventListener('focus',()=>{if(live.member)refreshSessions().catch(()=>{});});
+
+/* Atualização estável: relógios não recriam participantes, botões ou avisos. */
+function updateIslandClocks(){
+ if(!live.member)return;
+ const remaining=timerRunning?Math.max(0,Math.ceil((timerDeadline-Date.now())/1000)):timerRemaining;
+ const clock=$('#islandClock'),value=islandTime(remaining);
+ if(clock.textContent!==value)clock.textContent=value;
+ const s=live.sessions.find(s=>s.user_id===live.user.id);
+ const elapsed=s?islandTime(Math.max(0,Math.floor((Date.now()-Date.parse(s.started_at))/1000))):'';
+ if($('#islandSessionTime').textContent!==elapsed)$('#islandSessionTime').textContent=elapsed;
+}
+let islandOnlineSnapshot='';
+const renderOnlineIsland=refreshIsland;
+refreshIsland=function(){
+ if(!live.member){islandOnlineSnapshot='';return;}
+ const snapshot=JSON.stringify([live.sessions,live.profiles,timerMode,timerRunning]);
+ if(snapshot!==islandOnlineSnapshot){renderOnlineIsland();islandOnlineSnapshot=snapshot;}
+ updateIslandClocks();
+};
+setInterval(()=>{if(live.member)refreshIsland();},500);
