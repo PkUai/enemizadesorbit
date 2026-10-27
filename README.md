@@ -16,6 +16,7 @@ Supabase de testes: `rpmgilawltgekecudeqx`. Não usa o projeto antigo.
 - Biblioteca e trilhas administráveis: texto, links HTTPS para PDF/vídeo, progresso, anotações, trechos destacados, coleções, lista/grade e avaliação de utilidade.
 - Questões em branco nas provas não concedem XP, PR nem Sinapse.
 - Simulados e Coliseu individual com até oito participantes: convites, aceite/recusa, sala de espera, questões e prazo comuns, respostas persistentes, correção após encerramento, classificação por acertos/tempo.
+- Ilha dinâmica: contador de conexões por navegador com atividade nos últimos 90 segundos, não uma identificação física de dispositivos; Pomodoro ativo ou pausado tem prioridade na forma compacta.
 - Sessões com horários gerados no servidor e expiração de 30 minutos, metas pessoais e coletivas.
 - Chat geral, de sala e de aliança: até 30 mensagens do dia por canal, exclusão e denúncias. Atualização por consulta a cada oito segundos; não depende de Realtime.
 - Uma aliança por usuário, liderança, remoção/transferência, PR semanal e permanente atribuído à aliança no momento da conquista.
@@ -43,7 +44,7 @@ O reset pré-lançamento é uma operação futura, separada: exportar backup, co
 ## Arquivos e publicação
 
 - `index.html`: base visual original e utilidades locais. `assets/online.js`: autenticação, banco e ilha. `assets/features.js`: módulos online. `assets/features.css`: ajustes responsivos.
-- Migrações já aplicadas, na ordem: `schema.sql`, `expansion.sql`, `flows.sql`, `session_clock.sql`, `scoring.sql`, `confirmed_rules.sql`. Não reexecutar as migrações com CREATE TABLE no mesmo projeto.
+- Migrações já aplicadas, na ordem: `schema.sql`, `expansion.sql`, `flows.sql`, `session_clock.sql`, `scoring.sql`, `confirmed_rules.sql`, `device_presence.sql`. Não reexecutar as migrações com CREATE TABLE no mesmo projeto.
 - `seed.sql` e `bank_2023.sql`: importações idempotentes de questões. Alternativas não contêm `isCorrect`.
 - GitHub Pages publica a raiz da branch `main`. Assets possuem versão na URL para evitar mistura de versões em cache.
 - supabase-js 2.102.0 vendorizado, licença MIT em `assets/SUPABASE-LICENSE`.
@@ -52,6 +53,6 @@ O reset pré-lançamento é uma operação futura, separada: exportar backup, co
 
 `tests/database.sql`: cenários transacionais com duas contas temporárias e uma não autorizada; rollback final. Verifica isolamento, bloqueio de edição alheia, correção, idempotência, liderança, chats, partida com duas pessoas, ocultação do gabarito, aprovação de registros externos e acesso administrativo.
 
-`tests/ui.cjs`: JSDOM 26, teste de 19 rotas, login, resposta, tarefa, redação, escape de conteúdo, chat, estabilidade da ilha, leitor e administração. Execute com Node e jsdom disponível; `JSDOM_PATH` pode apontar para a instalação.
+`tests/ui.cjs`: JSDOM 26, teste de 19 rotas, login, resposta, tarefa, redação, escape de conteúdo, chat, prioridade e estabilidade da ilha, contador de Orbes, fotos e patentes no ranking, leitor e administração. Execute com Node e jsdom disponível; `JSDOM_PATH` pode apontar para a instalação.
 
 Os testes automatizados não substituem verificação visual em navegador real e uso simultâneo por testadores. A instalação do navegador automatizado não estava disponível no ambiente de implementação. O advisor do Supabase apontou proteção contra senhas vazadas desativada, uma configuração de Auth: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection.
