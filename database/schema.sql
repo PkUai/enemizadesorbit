@@ -1,0 +1,60 @@
+-- ENEMIZADES Orbit: ambiente de testes rpmgilawltgekecudeqx
+begin;
+create schema if not exists orbit_private;
+revoke all on schema orbit_private from public, anon;
+grant usage on schema orbit_private to authenticated;
+create table orbit_private.pilot_members(user_id uuid primary key references auth.users(id) on delete cascade);
+alter table orbit_private.pilot_members enable row level security;
+create policy member_self on orbit_private.pilot_members for select to authenticated using(user_id=(select auth.uid()));
+grant select on orbit_private.pilot_members to authenticated;
+create function public.orbit_is_member() returns boolean language sql stable security invoker set search_path='' as $$select exists(select 1 from orbit_private.pilot_members where user_id=(select auth.uid()))$$;
+revoke all on function public.orbit_is_member() from public,anon;
+grant execute on function public.orbit_is_member() to authenticated;
+create table public.orbit_profiles(user_id uuid primary key references auth.users(id) on delete cascade, display_name text not null check(length(display_name) between 1 and 40));
+create table public.orbit_questions(id text primary key,year integer not null,number integer not null,discipline text not null,language text,context text not null,prompt text not null,alternatives jsonb not null,source_url text not null,created_at timestamptz not null default now());
+create table orbit_private.answer_keys(question_id text primary key references public.orbit_questions(id),correct_letter text not null check(correct_letter in ('A','B','C','D','E')));
+alter table orbit_private.answer_keys enable row level security;
+revoke all on orbit_private.answer_keys from public,anon,authenticated;
+create table public.orbit_attempts(user_id uuid not null references auth.users(id) on delete cascade,question_id text not null references public.orbit_questions(id),choice text not null check(choice in ('A','B','C','D','E')),correct_letter text not null,is_correct boolean not null,points integer not null check(points in (5,10)),answered_at timestamptz not null default now(),primary key(user_id,question_id));
+create index orbit_attempts_question_idx on public.orbit_attempts(question_id);
+create table public.orbit_sessions(user_id uuid primary key references auth.users(id) on delete cascade,room text not null check(room in ('Banco de questões','Correção','Outro')),started_at timestamptz not null default now(),last_activity timestamptz not null default now());
+create index orbit_sessions_activity_idx on public.orbit_sessions(last_activity);
+alter table public.orbit_profiles enable row level security;
+alter table public.orbit_questions enable row level security;
+alter table public.orbit_attempts enable row level security;
+alter table public.orbit_sessions enable row level security;
+revoke all on public.orbit_profiles,public.orbit_questions,public.orbit_attempts,public.orbit_sessions from anon,authenticated;
+grant select on public.orbit_profiles,public.orbit_questions,public.orbit_attempts,public.orbit_sessions to authenticated;
+grant insert,update on public.orbit_profiles to authenticated;
+grant insert,update,delete on public.orbit_sessions to authenticated;
+create policy profiles_read on public.orbit_profiles for select to authenticated using((select public.orbit_is_member()));
+create policy profiles_insert on public.orbit_profiles for insert to authenticated with check(user_id=(select auth.uid()) and (select public.orbit_is_member()));
+create policy profiles_update on public.orbit_profiles for update to authenticated using(user_id=(select auth.uid()) and (select public.orbit_is_member())) with check(user_id=(select auth.uid()) and (select public.orbit_is_member()));
+create policy questions_read on public.orbit_questions for select to authenticated using((select public.orbit_is_member()));
+create policy attempts_read on public.orbit_attempts for select to authenticated using(user_id=(select auth.uid()) and (select public.orbit_is_member()));
+create policy sessions_read on public.orbit_sessions for select to authenticated using((select public.orbit_is_member()));
+create policy sessions_insert on public.orbit_sessions for insert to authenticated with check(user_id=(select auth.uid()) and (select public.orbit_is_member()));
+create policy sessions_update on public.orbit_sessions for update to authenticated using(user_id=(select auth.uid()) and (select public.orbit_is_member())) with check(user_id=(select auth.uid()) and (select public.orbit_is_member()));
+create policy sessions_delete on public.orbit_sessions for delete to authenticated using(user_id=(select auth.uid()) and (select public.orbit_is_member()));
+create function orbit_private.submit_answer(p_question text,p_choice text) returns jsonb language plpgsql security definer set search_path='' as $$
+declare u uuid:=auth.uid(); k text; a public.orbit_attempts;
+begin
+ if u is null or not exists(select 1 from orbit_private.pilot_members where user_id=u) then raise exception 'Acesso restrito aos testadores'; end if;
+ if p_choice is null or p_choice not in ('A','B','C','D','E') then raise exception 'Alternativa inválida'; end if;
+ select correct_letter into k from orbit_private.answer_keys where question_id=p_question;
+ if k is null then raise exception 'Questão indisponível'; end if;
+ insert into public.orbit_attempts(user_id,question_id,choice,correct_letter,is_correct,points) values(u,p_question,p_choice,k,p_choice=k,case when p_choice=k then 10 else 5 end) on conflict(user_id,question_id) do nothing;
+ select * into a from public.orbit_attempts where user_id=u and question_id=p_question;
+ insert into public.orbit_sessions(user_id,room) values(u,'Banco de questões') on conflict(user_id) do update set room='Banco de questões',started_at=case when public.orbit_sessions.last_activity<now()-interval '30 minutes' then now() else public.orbit_sessions.started_at end,last_activity=now();
+ return to_jsonb(a);
+end;$$;
+revoke all on function orbit_private.submit_answer(text,text) from public,anon;
+grant execute on function orbit_private.submit_answer(text,text) to authenticated;
+create function public.orbit_submit_answer(p_question text,p_choice text) returns jsonb language sql security invoker set search_path='' as $$select orbit_private.submit_answer(p_question,p_choice)$$;
+revoke all on function public.orbit_submit_answer(text,text) from public,anon;
+grant execute on function public.orbit_submit_answer(text,text) to authenticated;
+commit;
+
+-- Revisão de permissões internas
+revoke execute on function public.rls_auto_enable() from public,anon,authenticated;
+create policy answer_keys_no_client_access on orbit_private.answer_keys for all to authenticated using(false) with check(false);
