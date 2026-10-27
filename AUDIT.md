@@ -89,7 +89,7 @@ O ranking ainda calcula estatísticas percorrendo o histórico no servidor. Para
 - Revisar e marcar questões curtas para Comet A; publicar dicas/explicações e materiais reais.
 - Fornecer as regras ausentes listadas acima e as referências completas das interfaces/pacotes sonoros.
 - Implantar serviço de push, leitor PDF, backup/restauração e infraestrutura futura da IA. IA permanece bloqueada e sem chamadas pagas.
-- Executar testes reais de Google/e-mail, dois dispositivos, queda de rede e layout mobile. O ambiente não dispunha de navegador Chromium utilizável; a tentativa de instalação falhou. JSDOM verificou lógica e DOM, sem comprovar pixels, recorte real da foto ou fluidez visual.
+- Executar testes reais de Google/e-mail, dois dispositivos, queda de rede e layout mobile. A página pública de entrada foi conferida visualmente em Chrome após a publicação, com os botões Google, cadastro e recuperação presentes. Os logs não mostraram erros do aplicativo; apenas erros da extensão do navegador. A instalação de Chromium local falhou. JSDOM verificou a lógica das áreas autenticadas, mas recorte real da foto, fluidez e layout mobile ainda precisam de inspeção com conta conectada.
 
 ## Entrega
 

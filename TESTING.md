@@ -42,6 +42,7 @@ Execute com duas contas autorizadas no piloto. Use registros pequenos e identifi
 - `tests/ui.cjs`: 19 rotas, persistência de tarefas/redações, XSS, pesquisa de jogadores, opções, barra de XP, payload Google/redirect, estabilidade da ilha e criação do popup sem recompensa.
 - `tests/reward-frame.cjs`: valores reais, Orbes desconhecidos, tema claro, movimento reduzido, seta do PR, repetição e escape de conteúdo.
 - Duas chamadas SQL concorrentes para a mesma resposta: resultado de 1 tentativa, 1 evento e 15 XP. Conta temporária removida.
+- Pós-publicação: página pública de login conferida visualmente em Chrome; Google, cadastro e recuperação presentes, sem erros do aplicativo nos logs.
 - Advisor de segurança: apenas o aviso de proteção contra senhas vazadas desabilitada, já existente.
 
-Não foram realizados: login real com credenciais, OAuth completo, entrega de e-mails, navegação visual em Chromium, sincronização ponta a ponta em aparelhos físicos, teste prolongado de reconexão Realtime e carga em escala. Esses itens permanecem na lista dos testadores.
+Não foram realizados: login real com credenciais, OAuth completo, entrega de e-mails, inspeção visual das áreas autenticadas e do layout mobile, sincronização ponta a ponta em aparelhos físicos, teste prolongado de reconexão Realtime e carga em escala. Esses itens permanecem na lista dos testadores.
