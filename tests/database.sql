@@ -9,7 +9,7 @@ insert into orbit_private.admins select u1 from qa_ids;
 insert into public.orbit_profiles(user_id,display_name) select u1,'QA One' from qa_ids union all select u2,'QA Two' from qa_ids;
 set local role authenticated;
 do $$
-declare a uuid;b uuid;o uuid;doc uuid;run uuid;team uuid;ext uuid;q text;letter text;r jsonb;beforexp numeric;afterxp numeric;blocked boolean;
+declare a uuid;b uuid;o uuid;doc uuid;run uuid;team uuid;ext uuid;q text;letter text;r jsonb;beforexp numeric;afterxp numeric;blocked boolean;card uuid;
 begin
  select u1,u2,outsider into a,b,o from qa_ids;select question_id,correct_letter into q,letter from qa_key;
  perform set_config('request.jwt.claim.sub',a::text,true);
@@ -21,6 +21,7 @@ begin
  perform public.orbit_submit_answer(q,letter);perform public.orbit_submit_answer(q,'A');
  assert (select count(*)=1 from public.orbit_events where user_id=a and ref='bank:'||q),'Duplicate award';
  assert (public.orbit_api('overview')->'stats'->>'correct')::int=1,'Grading incorrect';
+ assert (public.orbit_api('overview')->'stats'->>'xp')::numeric=15,'Question XP incorrect';
  team:=(public.orbit_api('alliance_create','{"name":"QA Alliance","tag":"QA999"}')->>'id')::uuid;
  perform set_config('request.jwt.claim.sub',b::text,true);perform public.orbit_api('alliance_join',jsonb_build_object('id',team));
  blocked:=false;begin perform public.orbit_api('alliance_manage',jsonb_build_object('id',team,'operation','delete'));exception when others then blocked:=true;end;assert blocked,'Nonleader deleted alliance';
@@ -44,9 +45,20 @@ begin
  ext:=(public.orbit_api('external_add','{"source":"QA external","correct":2,"wrong":1}')->>'id')::uuid;
  assert (public.orbit_api('overview')->'stats'->>'xp')::numeric=beforexp,'Unapproved external awarded';
  perform public.orbit_api('admin',jsonb_build_object('operation','review','id',ext,'approve',true));
- afterxp:=(public.orbit_api('overview')->'stats'->>'xp')::numeric;assert afterxp=beforexp+25,'External approval did not award';
+ afterxp:=(public.orbit_api('overview')->'stats'->>'xp')::numeric;assert afterxp=beforexp+40,'External approval did not award';
  blocked:=false;begin perform public.orbit_api('admin',jsonb_build_object('operation','review','id',ext,'approve',true));exception when others then blocked:=true;end;assert blocked,'Duplicate approval allowed';
  perform set_config('request.jwt.claim.sub',b::text,true);blocked:=false;begin perform public.orbit_api('admin','{"operation":"members"}');exception when others then blocked:=true;end;assert blocked,'Nonadmin allowed';
+ card:=(public.orbit_api('document_save','{"kind":"flashcard","title":"QA card","data":{"back":"answer"}}')->>'id')::uuid;
+ perform public.orbit_api('flashcard_review',jsonb_build_object('id',card,'remembered',true));
+ perform public.orbit_api('flashcard_review',jsonb_build_object('id',card,'remembered',true));
+ assert (public.orbit_api('overview')->'stats'->>'xp')::numeric=6,'Repeated card rewarded twice';
+ assert (public.orbit_api('overview')->'stats'->>'pr')::numeric=3,'Flashcard freio incorrectly applied';
+ for i in 1..100 loop
+ card:=(public.orbit_api('document_save','{"kind":"flashcard","title":"QA cap","data":{"back":"answer"}}')->>'id')::uuid;
+ perform public.orbit_api('flashcard_review',jsonb_build_object('id',card,'remembered',true));
+ end loop;
+ assert (public.orbit_api('overview')->'stats'->>'xp')::numeric=600,'Daily card XP cap incorrect';
+ assert (public.orbit_api('overview')->'stats'->>'pr')::numeric=160,'Card PR bands incorrect';
  perform set_config('request.jwt.claim.sub',o::text,true);blocked:=false;begin perform public.orbit_api('overview');exception when others then blocked:=true;end;assert blocked,'Outsider allowed';
  assert not exists(select 1 from public.orbit_questions),'Outsider reads questions';
  raise notice 'PASS: isolation, grading, idempotence, alliance roles, chat, multiplayer, hidden keys, external review, admin gate';
