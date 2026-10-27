@@ -145,24 +145,59 @@ function onOnlineTimerEnd(){if(!live.member)return;const wasFocus=timerMode==='f
 function beginNextTimer(mode){closeModal();setTimer(mode);toggleTimer();refreshIsland();}
 
 /* Símbolos visuais de progresso e patentes do Orbit. */
-function identityIcon(kind){
- const paths={
-  pr:'<path d="M12 2.5 20 7v10l-8 4.5L4 17V7z" fill="currentColor" opacity=".15"/><path d="M12 2.5 20 7v10l-8 4.5L4 17V7z M8 15l4-6 4 6 M9.5 13h5" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>',
-  xp:'<circle cx="12" cy="12" r="9" fill="currentColor" opacity=".13"/><path d="M7 13.5 12 8l5 5.5M12 8v9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 18h10" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
-  synapse:'<path d="M13.4 2 5.6 13h5L9.7 22l8.7-12h-5z" fill="currentColor"/><path d="m13.4 4.7-5 7h3.7" fill="none" stroke="white" stroke-opacity=".65" stroke-width="1" stroke-linecap="round"/>',
-  orbes:'<circle cx="12" cy="12" r="9.4" fill="currentColor" opacity=".15"/><circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M12 5.3c.85 3.5 2.2 4.85 5.7 5.7-3.5.85-4.85 2.2-5.7 5.7-.85-3.5-2.2-4.85-5.7-5.7 3.5-.85 4.85-2.2 5.7-5.7Z" fill="currentColor"/><circle cx="18.4" cy="6" r="1" fill="currentColor"/>'
- };
- return `<svg class="identity-icon identity-${kind}" viewBox="0 0 24 24" aria-hidden="true">${paths[kind]||''}</svg>`;
+// Desenhos e tamanhos do HTML de referência aprovado.
+const approvedRanks=[
+ {name:'Quartzo',slug:'quartzo',colors:['#f7f6ff','#c4bfd9','#817b9e'],outline:'#807997',halo:'#c8c3dd35',shadow:'#847f9e25',desc:'Cristal alongado · Branco translúcido',shape:'M32 5 47 20 45 48 32 59 19 48 17 20Z',facets:'M32 5V59M17 20 32 27 47 20M19 48 32 40 45 48'},
+ {name:'Ametista',slug:'ametista',colors:['#e7c8ff','#ac72ea','#6535ad'],outline:'#794bb3',halo:'#a970e829',shadow:'#8b4dc330',desc:'Cristal lapidado · Violeta',shape:'M32 5 47 20 47 44 32 59 17 44 17 20Z',facets:'M32 5 25 23 17 20M32 5 39 23 47 20M25 23H39V41H25ZM17 44 25 41 32 59 39 41 47 44'},
+ {name:'Diamante',slug:'diamante',colors:['#d9faff','#80caed','#387bbd'],outline:'#428bb9',halo:'#6cc8e827',shadow:'#4395c42a',desc:'Corte amplo · Azul cristalino',shape:'M17 12 47 12 59 27 32 57 5 27Z',facets:'M5 27H59M17 12 23 27 32 57 41 27 47 12M23 27 32 12 41 27'},
+ {name:'Astralita',slug:'astralita',colors:['#ed9de9','#a9a5ff','#81eadc'],outline:'#9b78ce',halo:'#a891f33a',shadow:'#ad84d135',desc:'Cristal estelar · Reflexos iridescentes',shape:'M32 3 42 21 60 32 42 43 32 61 22 43 4 32 22 21Z',facets:'M32 3V61M4 32H60M22 21 42 43M42 21 22 43'}
+];let symbolSerial=0;
+function approvedRankSVG(r,size){
+ const id='gem'+symbolSerial++,mini=size<=24,large=size>=100;
+ const simple={quartzo:'M32 5V59',ametista:'M32 5V59',diamante:'M5 27H59',astralita:''};
+ const detail={quartzo:'M32 5 47 20 32 27Z',ametista:'M25 23H39V41H25Z',diamante:'M17 12 32 12 23 27 5 27Z',astralita:'M32 3 42 21 32 32 22 21Z'};
+ return `<svg xmlns="http://www.w3.org/2000/svg" class="badge" width="${size}" height="${size}" viewBox="0 0 64 64" role="img" aria-label="Patente ${r.name}">
+ <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${r.colors[0]}"/><stop offset=".48" stop-color="${r.colors[1]}"/><stop offset="1" stop-color="${r.colors[2]}"/></linearGradient>
+ ${large?`<clipPath id="${id}clip"><path d="${r.shape}"/></clipPath><linearGradient id="${id}sweep"><stop stop-color="white" stop-opacity="0"/><stop offset=".5" stop-color="white" stop-opacity=".55"/><stop offset="1" stop-color="white" stop-opacity="0"/></linearGradient>`:''}</defs>
+ <path d="${r.shape}" fill="url(#${id})" stroke="${r.outline}" stroke-width="${mini?2.3:1.8}" stroke-linejoin="round"/>
+ <path d="${mini?simple[r.slug]:r.facets}" fill="none" stroke="${r.outline}" opacity="${mini?.55:.6}" stroke-width="${mini?2.4:1.25}" stroke-linejoin="round"/>
+ ${r.slug==='astralita'&&!mini?'<path d="M32 20 36 28 44 32 36 36 32 44 28 36 20 32 28 28Z" fill="#fff" opacity=".6"/>':''}
+ ${large?`<style>@keyframes orbit-sweep{0%,15%{transform:translateX(-45px)}65%,100%{transform:translateX(95px)}}.light-sweep{animation:orbit-sweep 6s cubic-bezier(.4,0,.2,1) infinite}@media(prefers-reduced-motion:reduce){.light-sweep{animation:none;opacity:0}}</style><path d="${detail[r.slug]}" fill="white" opacity=".18"/><path d="${r.shape}" transform="translate(32 32) scale(.92) translate(-32 -32)" fill="none" stroke="white" stroke-opacity=".3" stroke-width=".7" stroke-linejoin="round"/><g clip-path="url(#${id}clip)"><g class="light-sweep"><path d="M-22-8H-4L28 72H10Z" fill="url(#${id}sweep)"/></g></g>`:''}</svg>`
+}
+
+const approvedIndicators=[
+{name:'Orbes',slug:'orbes',colors:['#ffe7aa','#efba62','#cd7953'],halo:'#efba6228',shadow:'#ca8c4028',desc:'Moedas · Núcleo luminoso',label:'RECOMPENSA'},
+{name:'PR',slug:'pr',colors:['#cebaff','#9b7ce9','#6552d1'],halo:'#a18aee28',shadow:'#6552d128',desc:'Pontos de Rank · Avanço competitivo',label:'COMPETIÇÃO'},
+{name:'XP',slug:'xp',colors:['#77e1ae','#42bdb8','#438dd8'],halo:'#54c4b526',shadow:'#42bdb828',desc:'Experiência · Progresso acumulado',label:'EVOLUÇÃO'},
+{name:'Sinapse',slug:'sinapse',colors:['#ffd36b','#f69a44','#e96858'],halo:'#ee9e5028',shadow:'#e8914428',desc:'Intensidade · Raio de energia',label:'ATIVIDADE'}
+];
+function approvedIndicatorSVG(r,size){
+ const id='ind'+symbolSerial++,mini=size<=24,large=size>=100,g=`url(#${id})`;
+ let shape='',detail='';
+ if(r.slug==='orbes'){
+ shape=`<circle cx="32" cy="32" r="23" fill="${g}"/>`;
+ detail=`<path d="M32 20Q34 29 44 32Q34 35 32 44Q30 35 20 32Q30 29 32 20Z" fill="white" opacity=".72"/>`;
+ }else if(r.slug==='pr'){
+ shape=`<path d="M16 27 32 13 48 27M16 47 32 33 48 47" fill="none" stroke="${g}" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>`;
+ }else if(r.slug==='xp'){
+ shape=`<path d="M32 13A19 19 0 1 0 51 32" fill="none" stroke="${g}" stroke-width="12" stroke-linecap="round"/><circle cx="46" cy="18" r="6" fill="${r.colors[2]}"/>`;
+ }else{
+ shape=`<path d="M35 7C37 4 41 6 40 9L35 25H48C51 25 52 28 50 30L27 57C25 60 21 58 22 55L27 39H14C11 39 10 36 12 34Z" fill="${g}"/>`;
+ }
+ return `<svg xmlns="http://www.w3.org/2000/svg" class="badge" width="${size}" height="${size}" viewBox="0 0 64 64" role="img" aria-label="${r.name}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${r.colors[0]}"/><stop offset=".5" stop-color="${r.colors[1]}"/><stop offset="1" stop-color="${r.colors[2]}"/></linearGradient>${large?`<mask id="${id}mask" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64" style="mask-type:alpha">${shape}</mask><linearGradient id="${id}sweep"><stop stop-color="white" stop-opacity="0"/><stop offset=".5" stop-color="white" stop-opacity=".55"/><stop offset="1" stop-color="white" stop-opacity="0"/></linearGradient>`:''}</defs>${shape}${detail}${large?`<style>@keyframes orbit-sweep{0%,15%{transform:translateX(-45px)}65%,100%{transform:translateX(95px)}}.light-sweep{animation:orbit-sweep 6s cubic-bezier(.4,0,.2,1) infinite}@media(prefers-reduced-motion:reduce){.light-sweep{animation:none;opacity:0}}</style><g mask="url(#${id}mask)"><g class="light-sweep"><path d="M-22-8H-4L28 72H10Z" fill="url(#${id}sweep)"/></g></g>`:''}</svg>`;
+}
+
+function identityIcon(kind,size=24){
+ const slug=kind==='synapse'?'sinapse':kind;
+ const symbol=approvedIndicators.find(item=>item.slug===slug);
+ if(!symbol)return '';
+ return approvedIndicatorSVG(symbol,size).replace('class="badge"',`class="identity-icon identity-${kind}"`);
 }
 function rankMark(tier,size='small'){
  const n=Math.max(0,Math.min(3,Number(tier)||0));
- const gems=[
-  '<path d="M12 2 19 7v9l-7 6-7-6V7Z" fill="currentColor" opacity=".22"/><path d="M12 2 19 7v9l-7 6-7-6V7Z M5 7l7 5 7-5 M12 12v10 M5 16l7-4 7 4"/>',
-  '<path d="M12 1.6 21 12 12 22.4 3 12Z" fill="currentColor" opacity=".23"/><path d="M12 1.6 21 12 12 22.4 3 12Z M12 1.6 7.5 12 12 22.4 16.5 12Z M3 12h18"/>',
-  '<path d="M5 4.5h14l3 6.5-10 11L2 11Z" fill="currentColor" opacity=".23"/><path d="M5 4.5h14l3 6.5-10 11L2 11Z M2 11h20 M5 4.5l4 6.5 3 11 3-11 4-6.5 M9 11l3-6.5 3 6.5"/>',
-  '<path d="M12 1.5 15 5l5-1-1 5 3.5 3L19 15l1 5-5-1-3 3.5L9 19l-5 1 1-5-3.5-3L5 9 4 4l5 1Z" fill="currentColor" opacity=".22"/><path d="M12 1.5 15 5l5-1-1 5 3.5 3L19 15l1 5-5-1-3 3.5L9 19l-5 1 1-5-3.5-3L5 9 4 4l5 1Z M12 5l5 7-5 7-5-7Z M7 12h10 M12 5v14"/>'
- ];
- return `<svg class="rank-mark rank-${n} rank-${size}" viewBox="0 0 24 24" role="img" aria-label="Patente ${tierNames[n]}"><g fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round">${gems[n]}</g></svg>`;
+ const pixels=typeof size==='number'?size:({tiny:16,small:24,guide:48,large:144}[size]||24);
+ const cls=typeof size==='number'?'size-'+size:size;
+ return approvedRankSVG(approvedRanks[n],pixels).replace('class="badge"',`class="rank-mark rank-${n} rank-${cls}"`);
 }
 function rankingAvatar(profile){const name=profile.display_name||'Enemizade';const image=features.avatarUrls[profile.user_id];return `<span class="avatar ranking-avatar">${image?`<img src="${esc(image)}" alt="">`:esc(name.slice(0,2).toUpperCase())}</span>`;}
 function identityStat(label,value,sub,kind){return `<div class="stat identity-stat"><div class="statlabel">${kind==='rank'?rankMark(value.tier,'tiny'):identityIcon(kind)}${esc(label)}</div><strong>${esc(kind==='rank'?tierNames[value.tier]:value)}</strong><small>${esc(sub)}</small></div>`;}
