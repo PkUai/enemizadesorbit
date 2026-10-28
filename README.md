@@ -1,30 +1,22 @@
-# ENEMIZADES Orbit — testes online 0.3
+# ENEMIZADES Orbit — versão 0.4
 
-Atualização incremental sobre `a59002c` de `PkUai/enemizadesorbit`. A estrutura da Visão Geral e os componentes Orbit foram preservados.
+Restauração dos cards Orbit, primeiro acesso com apelido, alternativas riscáveis, confirmação e navegação separadas no Coliseu, chat em página completa, loja e inventário, Orbes e resultados competitivos pendentes.
 
-- [Relatório completo, inventário e pendências](AUDIT.md).
-- [Roteiro dos testadores e validação automatizada](TESTING.md).
-- [Upgrade SQL consolidado da versão 0.2](database/upgrade_from_0_2.sql).
+Veja [mudanças, regras, limites e validação](UPDATE-0.4.md).
 
-O banco novo `rpmgilawltgekecudeqx` já recebeu as migrações desta entrega. **Não execute novamente o upgrade nele.** Nenhum ambiente antigo foi alterado. Dados dos dois testadores foram preservados: 2 perfis, 7 tentativas e 11 eventos existentes ao concluir a validação.
+## Estado da entrega
 
-O frontend depende de `index.html` e da pasta `assets/` completa. Publique ambos na raiz do mesmo GitHub Pages. A URL de OAuth no cliente é `https://pkuai.github.io/enemizadesorbit/`. Abrir o HTML isolado sem seus arquivos auxiliares não representa a instalação online.
+Migração 0.4 aplicada no Supabase em 28/10/2026 após autorização do proprietário. Os testes SQL passaram também no ambiente de destino usando fixtures com rollback, sem alterar dados de participantes. A manutenção automática está agendada a cada minuto.
 
-Não é uma declaração de implementação integral de todas as rodadas históricas. Orbes, regras competitivas não confirmadas, Guerras, leitor completo de PDF, push, backup automático/restauração e demais limites estão discriminados no relatório.
+`index.html` e toda a pasta `assets/` compõem o frontend. Não executar novamente `database/update04.sql`, seeds ou migrações antigas neste ambiente.
 
-## Arquivos
+## Testes
 
-`index.html` conserva o shell visual. `assets/online.js` e `assets/features.js` mantêm as integrações existentes. `assets/revision.js` acrescenta sincronização, preferências, pesquisa, OAuth, recibos e o novo fluxo competitivo. `assets/reward-frame.html` integra o popup aprovado com valores recebidos do servidor. A biblioteca Supabase 2.102.0 e sua licença MIT continuam vendorizadas.
-
-O SQL consolidado destina-se exclusivamente ao esquema original 0.2 do projeto novo. Os demais SQL desta atualização registram as etapas aplicadas e correções; não são um instalador para executar indiscriminadamente. Seeds de questões e migrações antigas não devem ser reexecutados.
-
-## Verificação
-
-Os testes SQL usam fixtures e `ROLLBACK`. Um teste concorrente adicional confirmou uma tentativa, um evento e 15 XP para duas submissões simultâneas; sua conta temporária foi removida.
-
-```bash
-JSDOM_PATH=/caminho/node_modules/jsdom node tests/ui.cjs
-JSDOM_PATH=/caminho/node_modules/jsdom node tests/reward-frame.cjs
+```sh
+npm ci
+npm test
 ```
 
-JSDOM 26 verifica comportamento e DOM; não substitui testes visuais em navegador nem login real com Google. Os arquivos `tests/database.sql`, `tests/revision.sql` e `tests/presence.sql` foram executados no projeto novo.
+Testes de interface usam JSDOM. Testes SQL usam PostgreSQL local isolado via PGlite, metadados de esquema sem dados pessoais, fixtures e rollback. O agendamento de pg_cron foi confirmado no ambiente de destino. A apresentação visual em navegador não foi revalidada nesta sessão.
+
+A [auditoria anterior](AUDIT.md) e o [roteiro 0.3](TESTING.md) foram preservados como registros históricos.

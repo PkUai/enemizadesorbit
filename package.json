@@ -1,0 +1,12 @@
+{
+  "name": "enemizades-orbit",
+  "private": true,
+  "version": "0.4.0",
+  "scripts": {
+    "test": "node tests/ui.cjs && node tests/reward-frame.cjs && node tests/database04.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
+    "jsdom": "26.1.0"
+  }
+}
