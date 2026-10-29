@@ -52,4 +52,11 @@ const wait=()=>new Promise(r=>setTimeout(r,30));const run=s=>w.eval(s);
  await run('startOnline()');assert(!w.document.querySelector('#onlineForm [name=nickname]'),'Nickname onboarding repeated');
  run("route='home';render()");for(const label of ['Questões hoje','Aproveitamento','Tempo de estudo','Pontuação','Seu plano de hoje','Continue por aqui','Estudando agora','Ranking da temporada'])assert(w.document.querySelector('#content').textContent.includes(label),label);
  run("route='settings';changeSettingsTab('preferences')");assert(w.document.querySelector('.swatches'));assert(!w.document.querySelector('#content').textContent.includes('Clássico'));
+
+ const reference=new JSDOM(fs.readFileSync(path.join(root,'tests/fixtures/simbolos-aprovados.html'),'utf8'),{runScripts:'dangerously'}).window;
+ const normalize=svg=>svg.replace(/(boost|ind)\d+/g,'$1ID');
+ for(const resource of ['pr','xp']){for(const minutes of [15,30,60]){assert.equal(normalize(run(`officialBoostArt(approvedIndicators.find(r=>r.slug==='${resource}'),${minutes},180)`)),normalize(reference.eval(`boostCard(indicators.find(r=>r.slug==='${resource}'),${minutes},180)`)));}for(const size of [24,32,48])assert.equal(normalize(run(`officialBoostMini(approvedIndicators.find(r=>r.slug==='${resource}'),${size})`)),normalize(reference.eval(`boostMini(indicators.find(r=>r.slug==='${resource}'),${size})`)));}
+ run("route='ranking';render()");assert(w.document.querySelector('.ranking-name .identity-xp'));assert.equal(w.document.querySelector('.topbar [data-go=settings]').textContent.trim(),'');
+ reference.close();
+ run("route='shop';render()");assert.equal(w.document.querySelectorAll('.official-boost-art svg.boost-art').length,6);assert(!w.document.querySelector('.boost-time'));
  assert.deepEqual(errors,[]);console.log('PASS: restored cards, 21 routes, login/nickname once, crossed choices, manual competition navigation, task persistence, XSS escaping, chat, stable island, options and receipts');w.close();})().catch(e=>{console.error(e);console.error(errors);w.close();process.exit(1)});

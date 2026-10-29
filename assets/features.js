@@ -116,7 +116,7 @@ views.ai=()=>head('Assistente IA','Integração reservada para uma próxima etap
 Object.assign(views,{home:featureHome,bank:featureBank,profile:featureProfile,ranking:featureRanking,synapse:featureSynapse,plan:featurePlan,essay:featureEssays,flashcards:featureFlashcards,pomodoro:featurePomodoro,library:()=>featureLibrary(false),trails:()=>featureLibrary(true),alliances:featureAlliances,sessions:featureSessions,sim:()=>featureRuns('sim'),coliseum:()=>featureRuns('match'),external:featureExternal,settings:featureSettings});
 const oldAccountUpdate=updateAccount;
 updateAccount=function(){oldAccountUpdate();const s=features.overview?.stats;const label=$('.account small');if(label&&s)label.textContent=tierNames[s.tier]+' · nível '+s.level;$('.sidefoot .version').textContent='Orbit · testes online 0.2';document.querySelectorAll('.topbar .avatar').forEach(e=>e.textContent=live.profile.display_name.slice(0,2));const image=features.avatarUrls[live.user.id];if(image)document.querySelectorAll('.account .avatar,.topbar .avatar').forEach(e=>e.innerHTML=`<img src="${esc(image)}" alt="">`);};
-const css=document.createElement('link');css.rel='stylesheet';css.href='assets/features.css?v=0.4.0';document.head.append(css);
+const css=document.createElement('link');css.rel='stylesheet';css.href='assets/features.css?v=0.4.1';document.head.append(css);
 document.querySelectorAll('[data-go="flashcards"] .navbadge').forEach(e=>e.remove());
 document.querySelectorAll('.demo').forEach(e=>e.textContent='AMBIENTE DE TESTES');
 $('.float-chat').classList.remove('hidden');$('#communitylog').innerHTML='';
@@ -223,3 +223,30 @@ function updateIslandSummary(){if(!live.member)return;const el=$('#islandSummary
  const key=JSON.stringify([islandNotice,active,active?remaining:null,timerMode,timerRunning,presenceCount,live.sessions.length]);if(el.dataset.summaryKey!==key||el.firstElementChild?.dataset.summary!=='online'){el.innerHTML=content;el.dataset.summaryKey=key;}
 }
 // Startup occurs after revision.js installs the online integrations.
+
+// Exact approved SVG card geometry from simbolos.html, version 4.
+function officialBoostNumerals(minutes,color){
+ const digits={
+ '0':'M8 0H30L38 8V112L30 120H8L0 112V8Z',
+ '1':'M-12 8 12-12H36V108H50V132H-12V108H9V26L-12 42Z',
+ '3':'M0 0H30L38 8V52L30 60H7M30 60L38 68V112L30 120H0',
+ '5':'M38 0H0V60H30L38 68V112L30 120H0',
+ '6':'M38 0H8L0 8V112L8 120H30L38 112V68L30 60H0'};
+ return `<g fill="none" stroke="${color}" stroke-opacity=".9" stroke-width="24" stroke-linecap="square" stroke-linejoin="round" aria-hidden="true">${String(minutes).split('').map((n,i)=>`<path d="${digits[n]}" ${n==='1'?`stroke="none" fill="${color}"`:''} transform="translate(${30+i*75} 79) scale(1.16 1.2)"/>`).join('')}</g>`;
+}
+function officialBoostArt(r,minutes,width=160){
+ const id='boost'+symbolSerial++,pr=r.slug==='pr';
+ const base=pr?['#e8ddff','#b49aee','#7654cd']:['#d0f6e6','#7cd9cb','#479ebe'];
+ const ink=pr?'#372461':'#123f4a',stroke=pr?'#6846a7':'#327d88';
+ const shape='M46 65H134Q164 65 164 95V207Q164 237 134 237H46Q16 237 16 207V95Q16 65 46 65Z';
+ const hex='M100 15 121 27Q132 33 132 45V63Q132 75 121 81L100 93Q90 99 80 93L59 81Q48 75 48 63V45Q48 33 59 27L80 15Q90 9 100 15Z';
+ const hexFill=pr?'#281c42':'#102f38';
+ const symbol=approvedIndicatorSVG(r,48).replace('width="48" height="48"','x="106" y="68" width="48" height="48"');
+ return `<svg xmlns="http://www.w3.org/2000/svg" class="boost-art" style="--boost-shadow:${r.shadow}" width="${width}" height="${width*250/180}" viewBox="0 0 180 250" role="img" aria-label="Card de boost de ${r.name}, ${minutes} minutos"><defs><linearGradient id="${id}bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${base[0]}"/><stop offset=".5" stop-color="${base[1]}"/><stop offset="1" stop-color="${base[2]}"/></linearGradient><linearGradient id="${id}shine"><stop stop-color="white" stop-opacity="0"/><stop offset=".5" stop-color="white" stop-opacity=".5"/><stop offset="1" stop-color="white" stop-opacity="0"/></linearGradient><clipPath id="${id}clip"><path d="${shape}"/><path d="${hex}" transform="translate(40 38)"/></clipPath></defs><path d="${shape}" fill="url(#${id}bg)" stroke="${stroke}" stroke-width="6"/><g clip-path="url(#${id}clip)">${officialBoostNumerals(minutes,ink)}</g><path d="${shape}" fill="none" stroke="${stroke}" stroke-width="6"/><path d="${hex}" transform="translate(40 38)" fill="${hexFill}" stroke="${stroke}" stroke-width="6" stroke-linejoin="round"/>${symbol}<g clip-path="url(#${id}clip)" pointer-events="none"><g class="boost-shine"><path d="M-90-20H-38L85 280H33Z" fill="url(#${id}shine)"/></g></g></svg>`;
+}
+
+function officialBoostMini(r,height=32){
+ const pr=r.slug==='pr',border=pr?'#7857b3':'#398b92',seal=pr?'#281c42':'#102f38';
+ const symbol=approvedIndicatorSVG(r,34).replace('width="34" height="34"','x="15" y="15" width="34" height="34"');
+ return `<svg xmlns="http://www.w3.org/2000/svg" class="boost-mini badge" width="${height}" height="${height}" viewBox="0 0 64 64" role="img" aria-label="Boost de ${r.name}"><path d="M36 4.3 54 14.7Q58 17 58 21.6V42.4Q58 47 54 49.3L36 59.7Q32 62 28 59.7L10 49.3Q6 47 6 42.4V21.6Q6 17 10 14.7L28 4.3Q32 2 36 4.3Z" fill="${seal}" stroke="${border}" stroke-width="3"/>${symbol}</svg>`;
+}
